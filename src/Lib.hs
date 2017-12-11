@@ -1,10 +1,12 @@
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 module Lib where
     -- ( someFunc
     -- ) where
 
 import ExprT (ExprT (..))
 import Parser
---import StackVM
+import StackVM
+import qualified Data.Map as M
 
 someFunc :: IO ()
 someFunc = do
@@ -14,6 +16,11 @@ someFunc = do
   print testMM
   print testSat
   putStrLn "===================\n"
+  putStrLn "test of problem 6\n=================="
+  print (add (lit 3) (var "x") :: VarExprT)
+  print (withVars [("x", 6)] $ add (lit 3) (var "x"))
+  print (withVars [("x", 6)] $ add (lit 3) (var "y"))
+  print (withVars [("x", 6), ("y", 3)] $ mul (var "x") (add (var "y") (var "x")))
 
 
 -------------------------------------------------------------------------
@@ -93,3 +100,53 @@ testInteger = testExp :: Maybe Integer
 testBool = testExp :: Maybe Bool
 testMM = testExp :: Maybe MinMax
 testSat = testExp :: Maybe Mod7
+
+-------------------------------------------------------------------------
+
+-------------------------------------------------------------------------
+  -- problem 5
+-------------------------------------------------------------------------
+
+instance Expr StackVM.Program where
+  lit i = [StackVM.PushI i]
+  add x y = x ++ y ++ [StackVM.Add]
+  mul x y = x ++ y ++ [StackVM.Mul]
+
+
+compile :: String -> Maybe StackVM.Program
+compile x = parseExp lit add mul x
+
+-------------------------------------------------------------------------
+
+-------------------------------------------------------------------------
+  -- problem 6
+-------------------------------------------------------------------------
+
+class HasVars a where
+  var :: String -> a
+
+data VarExprT = Lit' Integer
+              | Add' VarExprT VarExprT
+              | Mul' VarExprT VarExprT
+              | Var String
+              deriving (Show,Eq)
+
+instance Expr VarExprT where
+  lit = Lit'
+  add = Add'
+  mul = Mul'
+
+instance HasVars VarExprT where
+  var = Var
+
+instance HasVars (M.Map String Integer -> Maybe Integer) where
+  var x = M.lookup x
+
+instance Expr (M.Map String Integer -> Maybe Integer) where
+  lit x = (\_ -> Just x)
+  -- add x y = (\vs -> (+) <$> (x vs) <*> (y vs))
+  -- mul x y = (\vs -> (*) <$> (x vs) <*> (y vs))
+  add a b m = (+) <$> a m <*> b m
+  mul a b m = (*) <$> a m <*> b m
+withVars :: [(String, Integer)] -> (M.Map String Integer -> Maybe Integer) -> Maybe Integer
+withVars vs exp = exp $ M.fromList vs
