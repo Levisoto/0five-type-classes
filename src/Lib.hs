@@ -144,9 +144,9 @@ instance HasVars (M.Map String Integer -> Maybe Integer) where
 
 instance Expr (M.Map String Integer -> Maybe Integer) where
   lit x = (\_ -> Just x)
-  -- add x y = (\vs -> (+) <$> (x vs) <*> (y vs))
-  -- mul x y = (\vs -> (*) <$> (x vs) <*> (y vs))
-  add a b m = (+) <$> a m <*> b m
-  mul a b m = (*) <$> a m <*> b m
+  add x y = (\vs -> (+) <$> (x vs) <*> (y vs))
+  mul x y = (\vs -> (*) <$> (x vs) <*> (y vs))
+  -- add a b m = (+) <$> a m <*> b m
+  -- mul a b m = (*) <$> a m <*> b m
 withVars :: [(String, Integer)] -> (M.Map String Integer -> Maybe Integer) -> Maybe Integer
 withVars vs exp = exp $ M.fromList vs
